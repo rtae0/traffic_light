@@ -21,6 +21,8 @@ Arduino에서 LED 신호등을 제어하고, 웹 브라우저에서 p5.js를 통
 - **VS Code + PlatformIO**
 
 ---
+![arduinoCircuit_simulation](images/arduinoCircuit_simulation.png)
+![arduinoCircuit](images/arduinoCircuit.png)
 ## 핀 번호 및 기능 설명
 | 기능              | 핀 번호 | 설명 |
 |------------------|--------|---------------------------------|
