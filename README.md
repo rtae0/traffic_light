@@ -1,5 +1,7 @@
 # Arduino + p5.js Traffic Light Controller
 
+영상링크 : https://youtu.be/aVH0v-0G_DE
+
 이 프로젝트는 **Arduino와 p5.js**를 활용하여 교통 신호 제어 시스템을 구현하는 프로젝트입니다.  
 Arduino에서 LED 신호등을 제어하고, 웹 브라우저에서 p5.js를 통해 신호 변경 및 제어 상태를 확인할 수 있습니다.  
 
