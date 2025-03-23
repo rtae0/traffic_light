@@ -88,18 +88,15 @@ void loop()
 // --------------------------------------------------
 void onEmergencyButton()
 {
-    // 비상 버튼이 눌렸을 때 (LOW 상태일 때)
     if (digitalRead(EMERGENCY_BUTTON) == LOW)
     {
-        // 현재 모드가 비상 모드라면 NORMAL 모드로 변경
         if (currentMode == EMERGENCY)
         {
             currentMode = NORMAL;
-            trafficState = 0; // 신호등 상태를 초기화
+            trafficState = 0;
         }
         else
         {
-            // 그렇지 않다면 비상 모드로 전환
             currentMode = EMERGENCY;
         }
     }
@@ -142,14 +139,13 @@ void onPowerButton()
 // --------------------------------------------------
 void stateMachineTask()
 {
-    // 가변저항으로 밝기값 읽어오기
     ledBrightness = map(analogRead(POT_PIN), 0, 1023, 0, 255);
 
     static bool greenBlinkActive = false;
     static unsigned long greenBlinkStart = 0;
     static unsigned long greenBlinkLastToggle = 0;
     static int greenBlinkToggleCount = 0;
-    static bool greenLEDState = false; // stateMachineTask 내에서만 사용하는 Green LED ON/OFF
+    static bool greenLEDState = false;
 
     switch (currentMode)
     {
@@ -157,7 +153,6 @@ void stateMachineTask()
         digitalWrite(RED_LED, LOW);
         digitalWrite(YELLOW_LED, LOW);
         digitalWrite(GREEN_LED, LOW);
-        // Green LED 상태를 전역 변수에 반영
         gGreenLEDIsOn = false;
         sendStateToP5("OFF");
         break;
@@ -166,7 +161,6 @@ void stateMachineTask()
         digitalWrite(RED_LED, HIGH);
         digitalWrite(YELLOW_LED, LOW);
         digitalWrite(GREEN_LED, LOW);
-        // Green LED 상태를 전역 변수에 반영
         gGreenLEDIsOn = false;
         sendStateToP5("EMERGENCY");
         break;
@@ -183,7 +177,6 @@ void stateMachineTask()
             digitalWrite(GREEN_LED, ledState);
             lastBlink = millis();
         }
-        // Green LED 상태를 전역 변수에 반영
         gGreenLEDIsOn = digitalRead(GREEN_LED);
         sendStateToP5("BLINKING");
         break;
@@ -193,7 +186,6 @@ void stateMachineTask()
     {
         unsigned long now = millis();
 
-        // GREEN 끝난 뒤 깜빡이는 상태
         if (trafficState == 3)
         {
             if (now - greenBlinkStart >= 2000 || greenBlinkToggleCount >= 6)
@@ -206,13 +198,12 @@ void stateMachineTask()
             }
             else
             {
-                if (now - greenBlinkLastToggle >= 333)
+                if (now - greenBlinkLastToggle >= 167)
                 {
                     greenLEDState = !greenLEDState;
                     analogWrite(GREEN_LED, greenLEDState ? ledBrightness : 0);
                     greenBlinkLastToggle = now;
                     greenBlinkToggleCount++;
-                    // Green LED 상태를 전역 변수에 반영
                     gGreenLEDIsOn = greenLEDState;
                 }
                 digitalWrite(RED_LED, LOW);
@@ -229,7 +220,6 @@ void stateMachineTask()
             digitalWrite(YELLOW_LED, LOW);
             digitalWrite(GREEN_LED, LOW);
             gGreenLEDIsOn = false;
-
             if (now - lastStateChange > RED_TIME)
             {
                 trafficState = 1;
@@ -242,7 +232,6 @@ void stateMachineTask()
             analogWrite(YELLOW_LED, ledBrightness);
             digitalWrite(GREEN_LED, LOW);
             gGreenLEDIsOn = false;
-
             if (now - lastStateChange > YELLOW_TIME)
             {
                 trafficState = 2;
@@ -255,7 +244,6 @@ void stateMachineTask()
             digitalWrite(YELLOW_LED, LOW);
             analogWrite(GREEN_LED, ledBrightness);
             gGreenLEDIsOn = true;
-
             if (now - lastStateChange > GREEN_TIME)
             {
                 trafficState = 3;
@@ -266,7 +254,6 @@ void stateMachineTask()
                 greenLEDState = false;
                 digitalWrite(GREEN_LED, LOW);
                 gGreenLEDIsOn = false;
-
                 lastStateChange = now;
             }
             break;
@@ -278,7 +265,7 @@ void stateMachineTask()
 }
 
 // --------------------------------------------------
-// p5.js -> 아두이노 : "R,Y,G" 형태
+// p5.js -> 아두이노 : "R,Y,G" 형태의 문자열 수신
 // --------------------------------------------------
 void receiveTimeFromP5()
 {
@@ -287,29 +274,48 @@ void receiveTimeFromP5()
         String input = Serial.readStringUntil('\n');
         input.trim();
 
-        int r, y, g;
-        if (sscanf(input.c_str(), "%d,%d,%d", &r, &y, &g) == 3)
+        // 모드 명령 처리: 문자열이 "MODE:"로 시작하면 모드 변경
+        if (input.startsWith("MODE:"))
         {
-            RED_TIME = r;
-            YELLOW_TIME = y;
-            GREEN_TIME = g;
+            String modeCmd = input.substring(5);
+            modeCmd.trim();
+            if (modeCmd == "R")
+                currentMode = EMERGENCY;
+            else if (modeCmd == "B")
+                currentMode = BLINKING; // 예시: "B"를 BLINKING으로 처리할 수도 있음.
+            else if (modeCmd == "OPEN")
+                currentMode = NORMAL;
+            else if (modeCmd == "EMERGENCY")
+                currentMode = EMERGENCY;
+            else if (modeCmd == "BLINKING")
+                currentMode = BLINKING;
+            else if (modeCmd == "Y")
+                currentMode = NORMAL; // 예시: Y 모드에 따른 처리는 필요에 따라 변경
+            else if (modeCmd == "ONOFF")
+                currentMode = OFF; // 예시: ON/OFF 버튼과 연동하도록
+            // 모드 변경 후, LED 시간 값은 그대로 유지하거나 추가 조정 가능
+        }
+        else
+        {
+            int r, y, g;
+            if (sscanf(input.c_str(), "%d,%d,%d", &r, &y, &g) == 3)
+            {
+                RED_TIME = r;
+                YELLOW_TIME = y;
+                GREEN_TIME = g;
+            }
         }
     }
 }
 
 // --------------------------------------------------
-// 아두이노 -> p5.js (시간은 보내지 않음)
+// 아두이노 -> p5.js : 상태 전송 ("R,ledBrightness,mode" 형태)
 // --------------------------------------------------
 void sendStateToP5(const String &mode)
 {
-    // trafficState에 따른 색상 문자열 얻어오기
     String color = getColorName(trafficState);
-
-    Serial.print(color); // 예: "R", "Y", "G", "B"
-    Serial.print(",");
-    Serial.print(ledBrightness);
-    Serial.print(",");
-    Serial.println(mode);
+    String stateString = color + "," + String(ledBrightness) + "," + mode;
+    Serial.println(stateString);
 }
 
 // --------------------------------------------------
@@ -326,7 +332,6 @@ String getColorName(int state)
     case 2:
         return "G";
     case 3:
-        // 깜빡이는 상태일 때, 실제 LED가 켜져 있으면 "G", 꺼져 있으면 "B"
         return (gGreenLEDIsOn ? "G" : "B");
     default:
         return "X";
