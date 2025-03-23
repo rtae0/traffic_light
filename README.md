@@ -17,12 +17,19 @@ Arduino에서 LED 신호등을 제어하고, 웹 브라우저에서 p5.js를 통
 - p5.js 웹 UI를 통해 신호등 시간 변경 가능
 - WebSerial을 활용한 실시간 Arduino ↔ 웹 통신
 
+
 ## 사용 기술
 - **Arduino (PlatformIO)**
 - **p5.js (JavaScript)**
 - **WebSerial API**
 - **HTML / CSS / JavaScript**
 - **VS Code + PlatformIO**
+---
+## 손가락 포즈 종류
+| red | yello | green | normal | emergency | onoff | blinking |
+|--------|------|------|------|------|-------|--------|
+| ![red](images/ring.jpg) | ![yellow](images/middle.jpg) | ![green](images/index.jpg) | ![normal](images/open.jpg) | ![emergency](images/f.jpg) | ![onoff](images/pinky.jpg) | ![blinking](images/blink.jpg) |
+
 
 ---
 ![arduinoCircuit_simulation](images/arduinoCircuit_simulation.png)
