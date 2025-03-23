@@ -1,5 +1,7 @@
 # Arduino + p5.js Traffic Light Controller
 
+비전기능 영상링크 : https://youtu.be/rd5xGNUfrHw
+
 영상링크 : https://youtu.be/aVH0v-0G_DE
 
 이 프로젝트는 **Arduino와 p5.js**를 활용하여 교통 신호 제어 시스템을 구현하는 프로젝트입니다.  
@@ -199,7 +201,56 @@ p5.js에서 신호 시간을 받아오는 함수입니다.
 - `"B"` 값은 **초록불이 깜빡이는 상태를 의미**합니다.  
 
 ---
+## 🔹 p5.js + 비전 추가함수
+function gotHands(results)
+	•	역할: HandPose 모델에서 웹캠 영상을 분석한 결과(results)를 받아 hands 배열에 저장합니다.
+	•	주요 로직:
+	1.	hands = results; → 이후 draw() 함수에서 hands 정보를 이용해 손 관절 위치와 제스처를 분석합니다.
+ 
+⸻
+function getHandAngle(hand)
+	•	역할: 손목과 검지 관절의 위치를 이용해 손의 기울기(각도)를 계산합니다.
+	•	주요 로직:
+	1.	손목(keypoints[0])과 검지 MCP(keypoints[5])의 좌표를 받아 atan2(dy, dx)로 각도를 구합니다.
+	2.	각도를 0~180 범위로 맞춘 후, LED 시간 설정 등에 활용합니다.
 
+⸻
+function isFingerUp(hand, tipIndex, baseIndex)
+	•	역할: 특정 손가락이 접혔는지(Down), 펴졌는지(Up) 판별하는 함수입니다.
+	•	주요 로직:
+	1.	손가락 끝(tip)과 시작(base)의 y좌표 차이를 비교합니다.
+	2.	tip이 base보다 10픽셀 이상 위에 있으면 Up으로 판정합니다.
+
+⸻
+function isThumbHorizontal(hand)
+	•	역할: 엄지손가락이 옆으로 뻗어 있는지(수평) 확인하는 함수입니다.
+	•	주요 로직:
+	1.	엄지(baseIndex=2, tipIndex=4)의 좌표 차이(dx, dy)를 구합니다.
+	2.	abs(dx) > abs(dy)라면 엄지가 수평 상태라고 판단합니다.
+
+⸻
+function detectGesture(hand)
+	•	역할: 손가락 Up/Down 상태와 엄지 각도 등을 종합해 제스처를 문자열로 결정합니다.
+	•	주요 로직:
+	1.	isFingerUp와 isThumbHorizontal로 각 손가락 상태를 확인합니다.
+	2.	특정 조합에 따라 "Fist", "blink", "Down ring", "pinkyUp Sign" 등 제스처 이름을 반환합니다.
+
+⸻
+function getMappedLEDTime(angle)
+	•	역할: 손 각도(45°135°)를 LED 시간(1005000ms)으로 변환합니다.
+	•	주요 로직:
+	1.	constrain(angle, 45, 135)로 각도를 제한합니다.
+	2.	map()을 통해 45° → 100ms, 135° → 5000ms로 선형 매핑하여 반환합니다.
+
+⸻
+function sendModeCommand(gesture)
+	•	역할: 인식된 제스처에 따라 “MODE:xxx” 문자열을 아두이노로 전송합니다.
+	•	주요 로직:
+	1.	제스처 "Fist", "blink", "pinkyUp Sign" 등에 맞춰 "EMERGENCY", "BLINKING", "ONOFF" 등을 결정합니다.
+	2.	최종 문자열 "MODE:EMERGENCY\n" 등으로 만들어 시리얼 포트에 write()합니다.
+	3.	아두이노는 이 명령을 받아 해당 모드로 신호등을 변경합니다.
+ 
+---
 ## 🔹 p5.js 주요 함수  
 
 ### `function setup()`
